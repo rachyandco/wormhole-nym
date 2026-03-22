@@ -7,6 +7,7 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ACTIONS_RUNNER_FORCE_ACTIONS_NODE_VERSION: node24
 
 jobs:
   build-deb:
@@ -42,7 +43,7 @@ jobs:
         run: cp target/x86_64-unknown-linux-musl/release/wormhole-nym wormhole-nym-linux-amd64
 
       - name: Upload artifacts to release
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             *.deb
