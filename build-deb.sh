@@ -22,6 +22,7 @@ Package: ${PACKAGE}
 Version: ${VERSION}
 Architecture: ${ARCH}
 Maintainer: wormhole-nym
+License: GPL-3.0-only
 Description: P2P file transfer over the Nym mixnet
  Sends files directly between two machines through the Nym mixnet.
  No relay server, no rendezvous server. Uses SPAKE2 key exchange and
