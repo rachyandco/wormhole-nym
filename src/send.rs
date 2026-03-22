@@ -118,7 +118,13 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         },
     )?;
     client
-        .send_plain_message(receiver_addr, encode(&Msg::Encrypted { counter: send_ctr, ciphertext: offer_ct })?)
+        .send_plain_message(
+            receiver_addr,
+            encode(&Msg::Encrypted {
+                counter: send_ctr,
+                ciphertext: offer_ct,
+            })?,
+        )
         .await?;
     send_ctr += 1;
 
@@ -129,7 +135,10 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         .context("Connection closed waiting for Accept")?;
     let resp_msg: Msg = decode(&resp_raw.message)?;
     match resp_msg {
-        Msg::Encrypted { counter, ciphertext } => {
+        Msg::Encrypted {
+            counter,
+            ciphertext,
+        } => {
             // Use the counter from the message as the decryption nonce — correct
             // even if messages arrive out of order.
             match open(&recv_key, counter, &ciphertext)? {
@@ -178,7 +187,10 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         client
             .send_plain_message(
                 receiver_addr,
-                encode(&Msg::Encrypted { counter: send_ctr, ciphertext: chunk_ct })?,
+                encode(&Msg::Encrypted {
+                    counter: send_ctr,
+                    ciphertext: chunk_ct,
+                })?,
             )
             .await
             .with_context(|| format!("sending chunk {seq}"))?;
@@ -189,7 +201,11 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         // Every 16 chunks, non-blocking check for an abort from the receiver.
         if seq.is_multiple_of(16) {
             if let Some(Some(raw)) = client.next().now_or_never() {
-                if let Ok(Msg::Encrypted { counter, ciphertext }) = decode::<Msg>(&raw.message) {
+                if let Ok(Msg::Encrypted {
+                    counter,
+                    ciphertext,
+                }) = decode::<Msg>(&raw.message)
+                {
                     if let Ok(Payload::Error { message }) = open(&recv_key, counter, &ciphertext) {
                         bar.abandon_with_message("receiver aborted");
                         client.disconnect().await;
@@ -207,7 +223,10 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
     client
         .send_plain_message(
             receiver_addr,
-            encode(&Msg::Encrypted { counter: send_ctr, ciphertext: done_ct })?,
+            encode(&Msg::Encrypted {
+                counter: send_ctr,
+                ciphertext: done_ct,
+            })?,
         )
         .await?;
 
@@ -229,11 +248,8 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
     // without sending an Error.
     eprintln!("Waiting for delivery confirmation (gateway queue is draining)…");
     'ack: loop {
-        let raw = match tokio::time::timeout(
-            std::time::Duration::from_secs(30 * 60),
-            client.next(),
-        )
-        .await
+        let raw = match tokio::time::timeout(std::time::Duration::from_secs(30 * 60), client.next())
+            .await
         {
             Err(_) => {
                 client.disconnect().await;
@@ -243,9 +259,14 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         };
 
         match decode::<Msg>(&raw.message)? {
-            Msg::Encrypted { counter, ciphertext } => {
+            Msg::Encrypted {
+                counter,
+                ciphertext,
+            } => {
                 match open(&recv_key, counter, &ciphertext)? {
-                    Payload::Ack { sha256: received_hash } => {
+                    Payload::Ack {
+                        sha256: received_hash,
+                    } => {
                         if received_hash == sha256 {
                             println!("✓ {filename} delivered and verified.");
                         } else {
@@ -265,28 +286,39 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
                         let mut retrans_file = std::fs::File::open(&path)?;
                         for ctr in req_ctr..window_end {
                             let ct = if ctr == 0 {
-                                seal(&send_key, 0, &Payload::Offer {
-                                    filename: filename.clone(),
-                                    filesize,
-                                    sha256,
-                                })?
+                                seal(
+                                    &send_key,
+                                    0,
+                                    &Payload::Offer {
+                                        filename: filename.clone(),
+                                        filesize,
+                                        sha256,
+                                    },
+                                )?
                             } else if ctr <= total_chunks {
                                 let chunk_seq = ctr - 1;
                                 let file_offset = chunk_seq * CHUNK_SIZE as u64;
                                 retrans_file.seek(SeekFrom::Start(file_offset))?;
                                 let mut chunk_buf = vec![0u8; CHUNK_SIZE];
                                 let n = retrans_file.read(&mut chunk_buf)?;
-                                seal(&send_key, ctr, &Payload::Chunk {
-                                    seq: chunk_seq,
-                                    data: chunk_buf[..n].to_vec(),
-                                })?
+                                seal(
+                                    &send_key,
+                                    ctr,
+                                    &Payload::Chunk {
+                                        seq: chunk_seq,
+                                        data: chunk_buf[..n].to_vec(),
+                                    },
+                                )?
                             } else {
                                 seal(&send_key, ctr, &Payload::Done { total_chunks })?
                             };
                             client
                                 .send_plain_message(
                                     receiver_addr,
-                                    encode(&Msg::Encrypted { counter: ctr, ciphertext: ct })?,
+                                    encode(&Msg::Encrypted {
+                                        counter: ctr,
+                                        ciphertext: ct,
+                                    })?,
                                 )
                                 .await?;
                         }

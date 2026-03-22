@@ -1,9 +1,4 @@
-use std::{
-    collections::BTreeMap,
-    io::Write,
-    path::PathBuf,
-    time::Instant,
-};
+use std::{collections::BTreeMap, io::Write, path::PathBuf, time::Instant};
 
 use anyhow::{bail, Context, Result};
 use futures::StreamExt;
@@ -63,7 +58,10 @@ async fn next_payload(
             Ok(msg) => msg.context("Connection closed during transfer")?,
         };
         match decode::<Msg>(&raw.message)? {
-            Msg::Encrypted { counter, ciphertext } => {
+            Msg::Encrypted {
+                counter,
+                ciphertext,
+            } => {
                 // Decrypt with the nonce embedded in the message — correct even
                 // when messages arrive out of order.
                 let payload = open(key, counter, &ciphertext)
@@ -97,10 +95,13 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
 
     // ── Send Hello (receiver → sender) ───────────────────────────────────────
     client
-        .send_plain_message(sender_addr, encode(&Msg::Hello {
-            receiver_address: our_address,
-            pake_msg: our_pake_msg,
-        })?)
+        .send_plain_message(
+            sender_addr,
+            encode(&Msg::Hello {
+                receiver_address: our_address,
+                pake_msg: our_pake_msg,
+            })?,
+        )
         .await
         .context("sending Hello")?;
     eprintln!("Sent handshake, waiting for sender…");
@@ -140,11 +141,22 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
     let mut next_ctr: u64 = 0;
 
     // ── Wait for Offer ────────────────────────────────────────────────────────
-    let (filename, filesize, expected_sha256) =
-        match next_payload(&mut client, &send_key, &mut buf, &mut next_ctr, RECV_TIMEOUT).await? {
-            Some(Payload::Offer { filename, filesize, sha256 }) => (filename, filesize, sha256),
-            other => bail!("Expected Offer, got {other:?}"),
-        };
+    let (filename, filesize, expected_sha256) = match next_payload(
+        &mut client,
+        &send_key,
+        &mut buf,
+        &mut next_ctr,
+        RECV_TIMEOUT,
+    )
+    .await?
+    {
+        Some(Payload::Offer {
+            filename,
+            filesize,
+            sha256,
+        }) => (filename, filesize, sha256),
+        other => bail!("Expected Offer, got {other:?}"),
+    };
 
     // ── Prompt user ───────────────────────────────────────────────────────────
     println!();
@@ -163,12 +175,17 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
         let reject_ct = seal(
             &recv_key,
             recv_ctr,
-            &Payload::Reject { reason: "User declined".into() },
+            &Payload::Reject {
+                reason: "User declined".into(),
+            },
         )?;
         client
             .send_plain_message(
                 sender_addr,
-                encode(&Msg::Encrypted { counter: recv_ctr, ciphertext: reject_ct })?,
+                encode(&Msg::Encrypted {
+                    counter: recv_ctr,
+                    ciphertext: reject_ct,
+                })?,
             )
             .await?;
         client.disconnect().await;
@@ -180,7 +197,10 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
     client
         .send_plain_message(
             sender_addr,
-            encode(&Msg::Encrypted { counter: recv_ctr, ciphertext: accept_ct })?,
+            encode(&Msg::Encrypted {
+                counter: recv_ctr,
+                ciphertext: accept_ct,
+            })?,
         )
         .await?;
     recv_ctr += 1;
@@ -286,8 +306,17 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
 
     if let Err(e) = transfer_result {
         // Tell the sender we aborted so it can stop sending immediately.
-        if let Ok(ct) = seal(&recv_key, recv_ctr, &Payload::Error { message: e.to_string() }) {
-            if let Ok(encoded) = encode(&Msg::Encrypted { counter: recv_ctr, ciphertext: ct }) {
+        if let Ok(ct) = seal(
+            &recv_key,
+            recv_ctr,
+            &Payload::Error {
+                message: e.to_string(),
+            },
+        ) {
+            if let Ok(encoded) = encode(&Msg::Encrypted {
+                counter: recv_ctr,
+                ciphertext: ct,
+            }) {
                 let _ = client.send_plain_message(sender_addr, encoded).await;
                 tokio::time::sleep(std::time::Duration::from_secs(3)).await;
             }
@@ -307,17 +336,31 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
     let verified = actual_sha256 == expected_sha256;
 
     // ── Send Ack ──────────────────────────────────────────────────────────────
-    let ack_ct = seal(&recv_key, recv_ctr, &Payload::Ack { sha256: actual_sha256 })?;
+    let ack_ct = seal(
+        &recv_key,
+        recv_ctr,
+        &Payload::Ack {
+            sha256: actual_sha256,
+        },
+    )?;
     client
         .send_plain_message(
             sender_addr,
-            encode(&Msg::Encrypted { counter: recv_ctr, ciphertext: ack_ct })?,
+            encode(&Msg::Encrypted {
+                counter: recv_ctr,
+                ciphertext: ack_ct,
+            })?,
         )
         .await?;
 
     if verified {
-        std::fs::rename(&part_path, &output_path)
-            .with_context(|| format!("Cannot rename {} to {}", part_path.display(), output_path.display()))?;
+        std::fs::rename(&part_path, &output_path).with_context(|| {
+            format!(
+                "Cannot rename {} to {}",
+                part_path.display(),
+                output_path.display()
+            )
+        })?;
         println!("✓ Saved to {} (SHA-256 verified)", output_path.display());
     } else {
         eprintln!(

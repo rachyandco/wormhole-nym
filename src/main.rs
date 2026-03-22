@@ -10,7 +10,10 @@ use std::path::PathBuf;
 
 #[derive(Parser)]
 #[command(name = "wormhole-nym")]
-#[command(version, about = "P2P file transfer over the Nym mixnet — no relay server")]
+#[command(
+    version,
+    about = "P2P file transfer over the Nym mixnet — no relay server"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
