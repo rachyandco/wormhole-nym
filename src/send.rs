@@ -32,7 +32,7 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         .to_string_lossy()
         .into_owned();
 
-    eprintln!("Hashing {}…", filename);
+    eprintln!("Hashing {filename}…");
     let sha256 = hash_file(&path)?;
 
     // ── Connect to Nym mixnet ─────────────────────────────────────────────────
@@ -71,7 +71,7 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
             receiver_address,
             pake_msg,
         } => (receiver_address, pake_msg),
-        other => bail!("Expected Hello, got {:?}", other),
+        other => bail!("Expected Hello, got {other:?}"),
     };
     let receiver_addr: Recipient = Recipient::try_from_base58_string(&receiver_address)
         .map_err(|e| anyhow::anyhow!("Invalid receiver Nym address: {e}"))?;
@@ -104,7 +104,7 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         .context("Connection closed waiting for Ready")?;
     match decode::<Msg>(&ready_raw.message)? {
         Msg::Ready => {}
-        other => bail!("Expected Ready, got {:?}", other),
+        other => bail!("Expected Ready, got {other:?}"),
     }
 
     // ── Send file offer ───────────────────────────────────────────────────────
@@ -141,10 +141,10 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
                     client.disconnect().await;
                     return Ok(());
                 }
-                other => bail!("Expected Accept/Reject, got {:?}", other),
+                other => bail!("Expected Accept/Reject, got {other:?}"),
             }
         }
-        other => bail!("Expected Encrypted, got {:?}", other),
+        other => bail!("Expected Encrypted, got {other:?}"),
     }
 
     // ── Send file chunks ──────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
         bar.inc(n as u64);
 
         // Every 16 chunks, non-blocking check for an abort from the receiver.
-        if seq % 16 == 0 {
+        if seq.is_multiple_of(16) {
             if let Some(Some(raw)) = client.next().now_or_never() {
                 if let Ok(Msg::Encrypted { counter, ciphertext }) = decode::<Msg>(&raw.message) {
                     if let Ok(Payload::Error { message }) = open(&recv_key, counter, &ciphertext) {
@@ -295,10 +295,10 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
                         client.disconnect().await;
                         bail!("Receiver aborted: {message}");
                     }
-                    other => bail!("Expected Ack, got {:?}", other),
+                    other => bail!("Expected Ack, got {other:?}"),
                 }
             }
-            other => bail!("Expected Encrypted, got {:?}", other),
+            other => bail!("Expected Encrypted, got {other:?}"),
         }
     }
     client.disconnect().await;

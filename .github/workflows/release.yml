@@ -38,7 +38,12 @@ jobs:
       - name: Build .deb
         run: bash build-deb.sh
 
-      - name: Upload .deb to release
+      - name: Rename binary for upload
+        run: cp target/x86_64-unknown-linux-musl/release/wormhole-nym wormhole-nym-linux-amd64
+
+      - name: Upload artifacts to release
         uses: softprops/action-gh-release@v2.3.2
         with:
-          files: "*.deb"
+          files: |
+            *.deb
+            wormhole-nym-linux-amd64

@@ -70,7 +70,7 @@ async fn next_payload(
                     .with_context(|| format!("decryption failed for counter {counter}"))?;
                 buf.insert(counter, payload);
             }
-            other => bail!("Expected Encrypted message, got {:?}", other),
+            other => bail!("Expected Encrypted message, got {other:?}"),
         }
     }
 }
@@ -112,7 +112,7 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
         .context("Connection closed before PakeReply")?;
     let sender_pake_msg = match decode::<Msg>(&pake_raw.message)? {
         Msg::PakeReply { pake_msg } => pake_msg,
-        other => bail!("Expected PakeReply, got {:?}", other),
+        other => bail!("Expected PakeReply, got {other:?}"),
     };
 
     // ── Finish SPAKE2 ─────────────────────────────────────────────────────────
@@ -143,7 +143,7 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
     let (filename, filesize, expected_sha256) =
         match next_payload(&mut client, &send_key, &mut buf, &mut next_ctr, RECV_TIMEOUT).await? {
             Some(Payload::Offer { filename, filesize, sha256 }) => (filename, filesize, sha256),
-            other => bail!("Expected Offer, got {:?}", other),
+            other => bail!("Expected Offer, got {other:?}"),
         };
 
     // ── Prompt user ───────────────────────────────────────────────────────────
@@ -278,7 +278,7 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
                     Some(Payload::Error { message }) => {
                         bail!("Sender reported an error: {message}");
                     }
-                    Some(other) => bail!("Unexpected payload during transfer: {:?}", other),
+                    Some(other) => bail!("Unexpected payload during transfer: {other:?}"),
                 }
             }
         }
