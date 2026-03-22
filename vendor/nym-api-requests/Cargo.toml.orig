@@ -1,0 +1,53 @@
+[package]
+name = "nym-api-requests"
+version.workspace = true
+edition = "2021"
+license.workspace = true
+description = "Nym API request types and functions"
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bs58 = { workspace = true }
+cosmrs = { workspace = true }
+cosmwasm-std = { workspace = true }
+schemars = { workspace = true, features = ["preserve_order"] }
+serde = { workspace = true, features = ["derive"] }
+humantime-serde = { workspace = true }
+hex = { workspace = true }
+serde_json = { workspace = true }
+sha2.workspace = true
+tendermint = { workspace = true }
+tendermint-rpc = { workspace = true }
+thiserror.workspace = true
+time = { workspace = true, features = ["serde", "parsing", "formatting"] }
+ts-rs = { workspace = true, optional = true }
+utoipa.workspace = true
+tracing = { workspace = true }
+
+# for serde on secp256k1 signatures
+ecdsa = { workspace = true, features = ["serde"] }
+
+nym-serde-helpers = { workspace = true, features = ["bs58", "base64", "date"] }
+nym-credentials-interface = { workspace = true }
+nym-crypto = { workspace = true, features = ["serde", "asymmetric"] }
+
+nym-config = { workspace = true  }
+nym-ecash-time = { workspace = true  }
+nym-compact-ecash = { workspace = true  }
+nym-contracts-common = { workspace = true , features = ["naive_float"] }
+nym-mixnet-contract-common = { workspace = true , features = ["utoipa"] }
+nym-coconut-dkg-common = { workspace = true }
+nym-node-requests = { workspace = true, default-features = false, features = ["openapi"] }
+nym-noise-keys = { workspace = true }
+nym-network-defaults = { workspace = true }
+nym-ticketbooks-merkle = { workspace = true }
+nym-ecash-signer-check-types = { workspace = true }
+
+
+[features]
+default = []
+generate-ts = ["ts-rs", "nym-mixnet-contract-common/generate-ts"]

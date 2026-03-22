@@ -1,0 +1,47 @@
+[package]
+name = "wormhole-nym"
+version = "0.1.0"
+edition = "2021"
+description = "P2P file transfer over the Nym mixnet — no relay server needed"
+license = "MIT"
+
+[[bin]]
+name = "wormhole-nym"
+path = "src/main.rs"
+
+[dependencies]
+nym-sdk = "1.20.4"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Crypto
+spake2 = "0.4"
+chacha20poly1305 = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+
+# Error handling
+anyhow = "1"
+
+# Progress display
+indicatif = "0.17"
+
+# Logging (suppress noisy nym-sdk internals)
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# nym-noise 1.20.4 (crates.io) imports `VersionedNoiseKey` which was renamed to
+# `VersionedNoiseKeyV1` in nym-noise-keys 1.20.5. The vendored copy applies the
+# one-line fix so everything else stays on published releases.
+[patch.crates-io]
+nym-noise = { path = "vendor/nym-noise" }
+nym-node-requests = { path = "vendor/nym-node-requests" }
+nym-api-requests = { path = "vendor/nym-api-requests" }

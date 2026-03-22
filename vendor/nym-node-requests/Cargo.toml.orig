@@ -1,0 +1,51 @@
+[package]
+name = "nym-node-requests"
+version.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Nym Node API endpoint definitions and functions"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+celes = { workspace = true }                                               # country codes
+humantime-serde = { workspace = true }
+schemars = { workspace = true, features = ["preserve_order"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+strum = { workspace = true, features = ["derive"] }
+strum_macros = { workspace = true }
+time = { workspace = true, features = ["serde", "formatting", "parsing"] }
+thiserror = { workspace = true }
+url = { workspace = true, features = ["serde"] }
+
+nym-crypto = { workspace = true, features = [
+    "asymmetric",
+    "serde",
+] }
+nym-exit-policy = { workspace = true }
+nym-noise-keys = { workspace = true }
+nym-wireguard-types = { workspace = true }
+nym-upgrade-mode-check = { workspace = true, features = ["openapi"] }
+
+# feature-specific dependencies:
+
+## client:
+async-trait = { workspace = true, optional = true }
+nym-http-api-client = { workspace = true, optional = true }
+
+## openapi:
+utoipa = { workspace = true, features = ["time"], optional = true }
+nym-bin-common = { workspace = true, features = [
+    "bin_info_schema",
+] }
+
+
+[features]
+default = ["client"]
+client = ["nym-http-api-client", "async-trait"]
+openapi = ["utoipa", "nym-bin-common/openapi", "nym-exit-policy/openapi"]
