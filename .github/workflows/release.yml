@@ -49,6 +49,35 @@ jobs:
             *.deb
             wormhole-nym-linux-amd64
 
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Upload Windows binary to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/wormhole-nym.exe
+
   build-macos:
     runs-on: macos-latest
     permissions:
