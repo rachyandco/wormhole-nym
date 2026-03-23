@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PACKAGE="wormhole-nym"
-VERSION="0.1.3"
+VERSION="0.1.4"
 TARGET="x86_64-unknown-linux-musl"
 ARCH="amd64"
 DEB="${PACKAGE}_${VERSION}_${ARCH}.deb"
