@@ -73,7 +73,7 @@ async fn next_payload(
     }
 }
 
-pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
+pub async fn receive_file(code: String, output_dir: PathBuf, gateway: Option<String>) -> Result<()> {
     // ── Parse wormhole code ───────────────────────────────────────────────────
     let (password, sender_addr_str) = parse_code(&code)?;
     let sender_addr: Recipient = Recipient::try_from_base58_string(sender_addr_str)
@@ -81,7 +81,11 @@ pub async fn receive_file(code: String, output_dir: PathBuf) -> Result<()> {
 
     // ── Connect to Nym mixnet ─────────────────────────────────────────────────
     eprintln!("Connecting to the Nym mixnet…");
-    let mut client = MixnetClientBuilder::new_ephemeral()
+    let mut builder = MixnetClientBuilder::new_ephemeral();
+    if let Some(gw) = gateway {
+        builder = builder.request_gateway(gw);
+    }
+    let mut client = builder
         .build()
         .context("Failed to build Nym client")?
         .connect_to_mixnet()

@@ -15,6 +15,10 @@ use std::path::PathBuf;
     about = "P2P file transfer over the Nym mixnet — no relay server"
 )]
 struct Cli {
+    /// Gateway identity key (base58) to connect through. Chosen randomly if omitted.
+    #[arg(long, global = true)]
+    gateway: Option<String>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -48,7 +52,7 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
     match cli.command {
-        Commands::Send { file } => send::send_file(file).await,
-        Commands::Receive { code, output } => receive::receive_file(code, output).await,
+        Commands::Send { file } => send::send_file(file, cli.gateway).await,
+        Commands::Receive { code, output } => receive::receive_file(code, output, cli.gateway).await,
     }
 }

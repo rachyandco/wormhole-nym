@@ -18,7 +18,7 @@ use crate::{
 /// chunks moderate avoids excessive latency from large Sphinx packet trains.
 const CHUNK_SIZE: usize = 32 * 1024; // 32 KiB
 
-pub async fn send_file(path: PathBuf) -> Result<()> {
+pub async fn send_file(path: PathBuf, gateway: Option<String>) -> Result<()> {
     // ── File metadata ─────────────────────────────────────────────────────────
     let metadata = std::fs::metadata(&path)
         .with_context(|| format!("Cannot read file: {}", path.display()))?;
@@ -37,7 +37,11 @@ pub async fn send_file(path: PathBuf) -> Result<()> {
 
     // ── Connect to Nym mixnet ─────────────────────────────────────────────────
     eprintln!("Connecting to the Nym mixnet…");
-    let mut client = MixnetClientBuilder::new_ephemeral()
+    let mut builder = MixnetClientBuilder::new_ephemeral();
+    if let Some(gw) = gateway {
+        builder = builder.request_gateway(gw);
+    }
+    let mut client = builder
         .build()
         .context("Failed to build Nym client")?
         .connect_to_mixnet()
