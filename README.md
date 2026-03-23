@@ -110,10 +110,10 @@ Prints a wormhole code. Share it with the recipient over any channel (chat, emai
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--rate <KiB/s>` | `64` | Limit send rate. Keeps the gateway queue shallow so the progress bar reflects actual delivery speed and retransmit messages are not dropped by a congested network. Set to `0` to disable rate limiting (progress bar then shows local queue fill speed, not network throughput). |
+| `--rate <KiB/s>` | `48` | Limit send rate. Keeps the gateway queue shallow so the progress bar reflects actual delivery speed and retransmit messages are not dropped by a congested network. Set to `0` to disable rate limiting (progress bar then shows local queue fill speed, not network throughput). |
 | `--gateway <key>` | random | Gateway identity key (base58) to connect through. |
 
-**Why rate limiting matters:** The Nym SDK accepts outgoing packets into a local buffer at full CPU speed, but the gateway drains them at ~50 KiB/s. Without a limit, sending a large file builds a backlog of tens of thousands of packets. This makes the progress bar wildly optimistic, congests the network path back to the sender (causing `Retransmit` messages to be dropped), and can result in the transfer stalling near the end. The default of 64 KiB/s matches typical gateway throughput and avoids all of this.
+**Why rate limiting matters:** The Nym SDK accepts outgoing packets into a local buffer at full CPU speed, but the gateway drains them at ~40–50 KiB/s. Without a limit, sending a large file builds a backlog of tens of thousands of packets. This makes the progress bar wildly optimistic, congests the network path back to the sender (causing `Retransmit` messages to be dropped), and can result in the transfer stalling near the end. The default of 48 KiB/s stays just below typical gateway throughput, keeping the queue near-empty and eliminating the post-send drain phase.
 
 ### Receive a file
 
