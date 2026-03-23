@@ -6,7 +6,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use nym_sdk::mixnet::{MixnetClientBuilder, MixnetMessageSender, Recipient};
 use sha2::{Digest, Sha256};
 
-use crate::{
+use wormhole_nym_core::{
     crypto::{derive_keys, open, seal, spake2_start_receiver},
     protocol::{decode, encode, Msg, Payload},
 };

@@ -1,0 +1,21 @@
+[package]
+name = "wormhole-nym-wasm"
+version = "0.1.4"
+edition = "2021"
+description = "WebAssembly bindings for the wormhole-nym protocol"
+license = "GPL-3.0-only"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wormhole-nym-core = { path = "../lib" }
+wasm-bindgen = "0.2"
+serde-wasm-bindgen = "0.6"
+js-sys = "0.3"
+
+# getrandom's js backend is required so rand (used by words::generate_password)
+# can work in a browser / Node environment.  Only pulled in on wasm32 targets;
+# native builds (e.g. `cargo check`) use the default OS backend instead.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

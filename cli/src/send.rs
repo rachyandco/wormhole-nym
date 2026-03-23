@@ -8,7 +8,7 @@ use futures::{FutureExt, StreamExt};
 use indicatif::{ProgressBar, ProgressStyle};
 use nym_sdk::mixnet::{MixnetClientBuilder, MixnetMessageSender, Recipient};
 
-use crate::{
+use wormhole_nym_core::{
     crypto::{derive_keys, hash_file, open, seal, spake2_start_sender},
     protocol::{decode, encode, Msg, Payload},
     words::generate_password,

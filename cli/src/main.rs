@@ -1,8 +1,5 @@
-mod crypto;
-mod protocol;
 mod receive;
 mod send;
-mod words;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};

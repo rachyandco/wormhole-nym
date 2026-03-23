@@ -5619,6 +5619,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-wasm-bindgen"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8302e169f0eddcc139c70f139d19d6467353af16f9fce27e8c30158036a1e16b"
+dependencies = [
+ "js-sys",
+ "serde",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "serde_bytes"
 version = "0.11.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7879,18 +7890,38 @@ name = "wormhole-nym"
 version = "0.1.4"
 dependencies = [
  "anyhow",
- "bincode",
- "chacha20poly1305",
  "clap",
  "futures",
  "indicatif",
  "nym-sdk",
+ "sha2 0.10.9",
+ "tokio",
+ "tracing-subscriber",
+ "wormhole-nym-core",
+]
+
+[[package]]
+name = "wormhole-nym-core"
+version = "0.1.4"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "chacha20poly1305",
  "rand 0.8.5",
  "serde",
  "sha2 0.10.9",
  "spake2",
- "tokio",
- "tracing-subscriber",
+]
+
+[[package]]
+name = "wormhole-nym-wasm"
+version = "0.1.4"
+dependencies = [
+ "getrandom 0.2.17",
+ "js-sys",
+ "serde-wasm-bindgen",
+ "wasm-bindgen",
+ "wormhole-nym-core",
 ]
 
 [[package]]

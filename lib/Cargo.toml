@@ -1,0 +1,15 @@
+[package]
+name = "wormhole-nym-core"
+version = "0.1.4"
+edition = "2021"
+description = "Protocol, crypto, and word list for wormhole-nym (no tokio, no nym-sdk)"
+license = "GPL-3.0-only"
+
+[dependencies]
+spake2 = "0.4"
+chacha20poly1305 = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+anyhow = "1"
