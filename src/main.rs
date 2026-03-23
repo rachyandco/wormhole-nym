@@ -29,6 +29,13 @@ enum Commands {
     Send {
         /// File to send
         file: PathBuf,
+
+        /// Limit send rate to N KiB/s. Prevents gateway queue buildup and makes
+        /// the progress bar reflect actual delivery speed. Without this the SDK
+        /// buffer can hold tens of thousands of packets, causing the progress bar
+        /// to show ~500 KiB/s while the receiver only sees ~50 KiB/s.
+        #[arg(long, default_value_t = 64)]
+        rate: u32,
     },
     /// Receive a file using the wormhole code from the sender.
     Receive {
@@ -52,7 +59,7 @@ async fn main() -> Result<()> {
 
     let cli = Cli::parse();
     match cli.command {
-        Commands::Send { file } => send::send_file(file, cli.gateway).await,
+        Commands::Send { file, rate } => send::send_file(file, cli.gateway, rate).await,
         Commands::Receive { code, output } => receive::receive_file(code, output, cli.gateway).await,
     }
 }

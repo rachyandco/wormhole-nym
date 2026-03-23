@@ -18,7 +18,7 @@ use crate::{
 /// chunks moderate avoids excessive latency from large Sphinx packet trains.
 const CHUNK_SIZE: usize = 32 * 1024; // 32 KiB
 
-pub async fn send_file(path: PathBuf, gateway: Option<String>) -> Result<()> {
+pub async fn send_file(path: PathBuf, gateway: Option<String>, rate: u32) -> Result<()> {
     // ── File metadata ─────────────────────────────────────────────────────────
     let metadata = std::fs::metadata(&path)
         .with_context(|| format!("Cannot read file: {}", path.display()))?;
@@ -162,10 +162,11 @@ pub async fn send_file(path: PathBuf, gateway: Option<String>) -> Result<()> {
 
     // ── Send file chunks ──────────────────────────────────────────────────────
     let bar = ProgressBar::new(filesize);
+    let bar_label = if rate > 0 { "Sending" } else { "Queuing" };
     bar.set_style(
-        ProgressStyle::with_template(
-            "Sending   [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({binary_bytes_per_sec} {eta})",
-        )
+        ProgressStyle::with_template(&format!(
+            "{bar_label}   [{{elapsed_precise}}] [{{wide_bar:.cyan/blue}}] {{bytes}}/{{total_bytes}} ({{binary_bytes_per_sec}} {{eta}})"
+        ))
         .unwrap()
         .progress_chars("=>-"),
     );
@@ -201,6 +202,13 @@ pub async fn send_file(path: PathBuf, gateway: Option<String>) -> Result<()> {
         send_ctr += 1;
         seq += 1;
         bar.inc(n as u64);
+
+        // Rate limiting: sleep so that the gateway queue stays shallow and the
+        // progress bar reflects actual delivery speed rather than local enqueue speed.
+        if rate > 0 {
+            let delay = std::time::Duration::from_secs_f64(n as f64 / 1024.0 / rate as f64);
+            tokio::time::sleep(delay).await;
+        }
 
         // Every 16 chunks, non-blocking check for an abort from the receiver.
         if seq.is_multiple_of(16) {

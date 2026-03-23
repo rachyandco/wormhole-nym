@@ -16,7 +16,7 @@ On the receiving machine run:
 
 Waiting for the receiver to connect…
 Receiver accepted the transfer.
-Sending   [00:00:08] [==============] 2.31 MiB/2.31 MiB (1.24 MiB/s 0s)
+Sending   [00:00:41] [==============] 2.31 MiB/2.31 MiB (57.6 KiB/s 0s)
 Waiting for delivery confirmation (gateway queue is draining)…
 ✓ photo.jpg delivered and verified.
 ```
@@ -106,11 +106,21 @@ wormhole-nym send <file>
 
 Prints a wormhole code. Share it with the recipient over any channel (chat, email, etc.). The code is only useful once — it encodes a one-time ephemeral Nym identity.
 
+#### Options
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--rate <KiB/s>` | `64` | Limit send rate. Keeps the gateway queue shallow so the progress bar reflects actual delivery speed and retransmit messages are not dropped by a congested network. Set to `0` to disable rate limiting (progress bar then shows local queue fill speed, not network throughput). |
+| `--gateway <key>` | random | Gateway identity key (base58) to connect through. |
+
+**Why rate limiting matters:** The Nym SDK accepts outgoing packets into a local buffer at full CPU speed, but the gateway drains them at ~50 KiB/s. Without a limit, sending a large file builds a backlog of tens of thousands of packets. This makes the progress bar wildly optimistic, congests the network path back to the sender (causing `Retransmit` messages to be dropped), and can result in the transfer stalling near the end. The default of 64 KiB/s matches typical gateway throughput and avoids all of this.
+
 ### Receive a file
 
 ```sh
-wormhole-nym receive '<code>'          # saves to current directory
-wormhole-nym receive '<code>' -o ~/Downloads
+wormhole-nym receive '<code>'                          # saves to current directory
+wormhole-nym receive '<code>' -o ~/Downloads           # saves to a specific directory
+wormhole-nym receive '<code>' --gateway <key>          # use a specific gateway
 ```
 
 The file is saved as `<name>.part` until the SHA-256 hash is verified, then renamed to the final name.
@@ -135,7 +145,7 @@ RUST_LOG=debug wormhole-nym send file.txt  # show everything
 ```
 src/
   main.rs       CLI (clap)
-  words.rs      361-word list, generates 3-word SPAKE2 passwords
+  words.rs      512-word list, generates 3-word SPAKE2 passwords
   protocol.rs   Msg / Payload enums, bincode serialisation
   crypto.rs     SPAKE2 wrappers, ChaCha20-Poly1305 helpers, SHA-256 file hash
   send.rs       Sender state machine
@@ -169,12 +179,12 @@ done
 
 ### 2. Gateway queue backlog and transfer speed
 
-The Nym client queues outgoing packets in a local buffer and drains them into the gateway asynchronously. For large files this queue reaches thousands of packets and the sender must remain connected long after the send loop finishes — visibly, the sender shows "gateway queue is draining" while the receiver is still receiving.
+The Nym client queues outgoing packets in a local buffer and drains them into the gateway asynchronously. The `--rate` flag (default 64 KiB/s) limits how fast chunks are pushed into that buffer, keeping the queue shallow and preventing packet loss near the end of large transfers. See [Why rate limiting matters](#options) above.
 
-In practice, the gateway can drop a tail of packets when the queue grows very large. The ARQ retransmission mechanism handles this, but it adds latency. Possible improvements:
-- Expose the queue depth via the Nym SDK and show it as a second progress indicator.
-- Implement application-level flow control: pause sending when the backlog exceeds a threshold, so the queue never grows unboundedly. This would reduce end-to-end latency for large files and reduce packet loss.
-- Use the Nym SDK's stream mode (TCP-like abstraction) if it becomes stable — it may handle backpressure internally.
+Remaining limitations:
+- The `--rate` default is a conservative estimate based on observed gateway throughput (~46 KiB/s). Faster gateways may support higher rates.
+- The Nym SDK does not expose the queue depth via a public API, so a "queue draining" progress bar is not currently possible.
+- A future improvement could use the Nym SDK's stream mode (TCP-like abstraction) if it becomes stable, which may handle backpressure internally and remove the need for a manual rate limit.
 
 ### 3. No streaming / directory support
 
@@ -192,7 +202,7 @@ A persistent identity mode (`new_with_default_storage`) would allow:
 
 ### 5. No progress on the sender side during queue drain
 
-After the send loop finishes, the sender shows a static message while waiting for the Ack. The Nym SDK logs the backlog count but does not expose it via a public API. If the SDK exposes this metric in a future version, it could be displayed as a second progress bar ("queue draining: 4200 → 0 packets").
+After the send loop finishes, the sender shows a static "Waiting for delivery confirmation" message while the gateway drains its remaining queue. With the default rate limit the residual queue is small (a few seconds' worth), but the message is still shown. The Nym SDK does not expose the queue depth via a public API; if it does in a future version, a live countdown could be displayed.
 
 ### 6. Single-recipient only
 
