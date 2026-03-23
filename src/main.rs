@@ -34,7 +34,7 @@ enum Commands {
         /// the progress bar reflect actual delivery speed. Without this the SDK
         /// buffer can hold tens of thousands of packets, causing the progress bar
         /// to show ~500 KiB/s while the receiver only sees ~50 KiB/s.
-        #[arg(long, default_value_t = 48)]
+        #[arg(long, default_value_t = 64)]
         rate: u32,
     },
     /// Receive a file using the wormhole code from the sender.
