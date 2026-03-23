@@ -257,11 +257,11 @@ pub async fn receive_file(code: String, output_dir: PathBuf, gateway: Option<Str
                 match result? {
                     None => {
                         // Timed out waiting for counter `next_ctr`.
-                        // If no chunk has arrived for 60s, assume the sender
+                        // If no chunk has arrived for 120s, assume the sender
                         // is dead and stop waiting.
-                        if last_progress.elapsed() > std::time::Duration::from_secs(60) {
+                        if last_progress.elapsed() > std::time::Duration::from_secs(120) {
                             bar.abandon_with_message("sender disconnected");
-                            break Err(anyhow::anyhow!("no progress for 60s — sender disconnected"));
+                            break Err(anyhow::anyhow!("no progress for 120s — sender disconnected"));
                         }
                         // Batch-request all consecutive missing counters we can
                         // identify from the reorder buffer right now.
