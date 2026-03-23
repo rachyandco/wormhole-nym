@@ -1,6 +1,6 @@
 [package]
 name = "wormhole-nym-core"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "Protocol, crypto, and word list for wormhole-nym (no tokio, no nym-sdk)"
 license = "GPL-3.0-only"
