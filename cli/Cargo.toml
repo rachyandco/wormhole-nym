@@ -1,6 +1,6 @@
 [package]
 name = "wormhole-nym"
-version = "0.1.5"
+version = "0.1.7"
 edition = "2021"
 description = "P2P file transfer over the Nym mixnet — no relay server needed"
 license = "GPL-3.0-only"
