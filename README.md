@@ -96,6 +96,35 @@ cargo build --release
 
 ---
 
+## JavaScript / browser bindings
+
+The protocol crypto (SPAKE2, ChaCha20-Poly1305 sealing, key derivation, SHA-256) is also published to npm as a wasm package, so a web app can interoperate bit-for-bit with the CLI:
+
+```sh
+npm install @rachyandco/wormhole-nym-wasm
+```
+
+```js
+import {
+  wasm_generate_password,
+  Spake2SenderState,
+  wasm_derive_keys,
+  wasm_seal,
+} from '@rachyandco/wormhole-nym-wasm';
+```
+
+The wasm bindings cover the protocol layer only. Transport (mixnet I/O) is left to the consumer — pair it with the [Nym TypeScript SDK](https://www.npmjs.com/package/@nymproject/sdk). See [`wasm/README.md`](wasm/README.md) for the full API surface, or the package page at [npmjs.com/package/@rachyandco/wormhole-nym-wasm](https://www.npmjs.com/package/@rachyandco/wormhole-nym-wasm).
+
+To rebuild and republish locally:
+
+```sh
+cd wasm
+wasm-pack build --target bundler --release --scope rachyandco
+cd pkg && npm publish --access public
+```
+
+---
+
 ## Usage
 
 ### Send a file
@@ -142,15 +171,24 @@ RUST_LOG=debug wormhole-nym send file.txt  # show everything
 
 ## Architecture
 
+The repo is a Cargo workspace with three crates plus a vendor directory:
+
 ```
-src/
-  main.rs       CLI (clap)
-  words.rs      512-word list, generates 3-word SPAKE2 passwords
-  protocol.rs   Msg / Payload enums, bincode serialisation
-  crypto.rs     SPAKE2 wrappers, ChaCha20-Poly1305 helpers, SHA-256 file hash
-  send.rs       Sender state machine
-  receive.rs    Receiver state machine (with BTreeMap reorder buffer + ARQ)
-vendor/         Local patches for broken nym-sdk 1.20.4 crates (see below)
+lib/                    wormhole-nym-core — protocol-only crate (no tokio, no nym-sdk)
+  src/lib.rs            Re-exports the three modules below
+  src/words.rs          463-word list, generates 3-word SPAKE2 passwords
+  src/protocol.rs       Msg / Payload enums, bincode serialisation
+  src/crypto.rs         SPAKE2 wrappers, ChaCha20-Poly1305 helpers, key derivation, SHA-256
+
+cli/                    wormhole-nym — CLI binary, depends on lib/ + nym-sdk
+  src/main.rs           clap entry point
+  src/send.rs           Sender state machine
+  src/receive.rs        Receiver state machine (BTreeMap reorder buffer + ARQ)
+
+wasm/                   @rachyandco/wormhole-nym-wasm — WebAssembly bindings, depends on lib/ only
+  src/lib.rs            #[wasm_bindgen] wrappers around lib/'s crypto + words
+
+vendor/                 Local patches for broken nym-sdk 1.20.4 crates (see below)
 ```
 
 Chunk size is 32 KiB. Each chunk is individually encrypted and carries a sequence number. The receiver buffers out-of-order chunks and writes them to disk in order.
