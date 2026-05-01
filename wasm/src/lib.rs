@@ -136,3 +136,30 @@ pub fn wasm_open(key: &[u8], counter: u64, ciphertext: &[u8]) -> Result<Vec<u8>,
     let payload = open(key, counter, ciphertext).map_err(|e| JsError::new(&e.to_string()))?;
     encode(&payload).map_err(|e| JsError::new(&e.to_string()))
 }
+
+// ── Raw crypto primitives ─────────────────────────────────────────────────────
+
+/// Raw ChaCha20-Poly1305 encryption (no Payload encoding).
+/// Matches `crypto::encrypt` from wormhole-nym-core exactly.
+#[wasm_bindgen]
+pub fn wasm_encrypt(key: &[u8], counter: u64, plaintext: &[u8]) -> Result<Vec<u8>, JsError> {
+    use wormhole_nym_core::crypto::encrypt;
+    let key: &[u8; 32] = key.try_into().map_err(|_| JsError::new("key must be 32 bytes"))?;
+    encrypt(key, counter, plaintext).map_err(|e| JsError::new(&e.to_string()))
+}
+
+/// Raw ChaCha20-Poly1305 decryption (no Payload decoding).
+/// Matches `crypto::decrypt` from wormhole-nym-core exactly.
+#[wasm_bindgen]
+pub fn wasm_decrypt(key: &[u8], counter: u64, ciphertext: &[u8]) -> Result<Vec<u8>, JsError> {
+    use wormhole_nym_core::crypto::decrypt;
+    let key: &[u8; 32] = key.try_into().map_err(|_| JsError::new("key must be 32 bytes"))?;
+    decrypt(key, counter, ciphertext).map_err(|e| JsError::new(&e.to_string()))
+}
+
+/// SHA-256 of arbitrary bytes — matches `sha2::Sha256` used throughout wormhole-nym-core.
+#[wasm_bindgen]
+pub fn wasm_sha256(data: &[u8]) -> Vec<u8> {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(data).to_vec()
+}
