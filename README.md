@@ -1,6 +1,6 @@
 # wormhole-nym
 
-**P2P file transfer over the [Nym mixnet](https://nymtech.net/) — no relay server, no rendezvous server.**
+**P2P file transfer over the [Nym mixnet](https://nym.com/) — no relay server, no rendezvous server.**
 
 Inspired by [Magic Wormhole](https://github.com/magic-wormhole/magic-wormhole), but instead of using a central server for peer discovery and a transit relay for data, every byte travels through the Nym mixnet. The sender's Nym address *is* the rendezvous point. No infrastructure to trust or operate.
 
